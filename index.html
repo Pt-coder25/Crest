@@ -65,20 +65,22 @@
 
         <div class="brand">
 
-            <div class="brand-mark" role="img" aria-label="Crest Financial logo">
-                <svg class="crest-signature" viewBox="0 0 80 52" aria-hidden="true">
-                    <text class="signature-f" x="28" y="40">F</text>
-                    <text class="signature-c" x="12" y="34">C</text>
-                </svg>
-            </div>
+            <a href="#overview" class="brand-logo">
+                <div class="brand-mark" role="img" aria-label="Crest Financial logo">
+                    <svg class="crest-signature" viewBox="0 0 80 52" aria-hidden="true">
+                        <text class="signature-f" x="28" y="40">F</text>
+                        <text class="signature-c" x="12" y="34">C</text>
+                    </svg>
+                </div>
 
-            <div>
-                <h1>Crest Financial</h1>
+                <div>
+                    <h1>Crest Financial</h1>
 
-                <span>
-                    Your money at a glance.
-                </span>
-            </div>
+                    <span>
+                        Wealth built with purpose.
+                    </span>
+                </div>
+            </a>
 
         </div>
 
@@ -146,7 +148,7 @@
             </p>
 
             <h2>
-                Your money at a glance.
+                Wealth built with purpose.
             </h2>
 
         </section>
@@ -257,8 +259,8 @@
             <article class="overview-panel">
                 <div class="overview-panel-header">
                     <div>
-                        <span class="section-kicker">AT A GLANCE</span>
-                        <h2>Money health</h2>
+                        <span class="section-kicker">DASHBOARD</span>
+                        <h2>Account summary</h2>
                     </div>
                 </div>
                 <div class="health-list">
@@ -268,6 +270,13 @@
                 </div>
             </article>
         </section>
+
+        <!-- CTA Button -->
+        <div class="overview-cta">
+            <button id="ctaAddTransaction" class="cta-button">
+                <span>+</span> Add Your First Transaction
+            </button>
+        </div>
 
 
         <!-- =============================================
@@ -1043,6 +1052,29 @@
                     </p>
                 </div>
 
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="analytics-panel">
+                <h3>Key Statistics</h3>
+                <div class="statistics-grid" id="statisticsGrid">
+                    <div class="statistic-card">
+                        <h3>Average Transaction</h3>
+                        <div class="stat-value" id="avgTransaction">$0.00</div>
+                    </div>
+                    <div class="statistic-card">
+                        <h3>Largest Expense</h3>
+                        <div class="stat-value" id="largestExpense">$0.00</div>
+                    </div>
+                    <div class="statistic-card">
+                        <h3>Total Saved</h3>
+                        <div class="stat-value" id="totalSaved">$0.00</div>
+                    </div>
+                    <div class="statistic-card">
+                        <h3>Total Borrowed</h3>
+                        <div class="stat-value" id="totalBorrowed">$0.00</div>
+                    </div>
+                </div>
             </div>
 
         </section>
