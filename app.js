@@ -394,10 +394,10 @@ function renderFunds() {
     setText("borrowedFundsTotal", money(borrowedTotal));
 
     const savingsElement = document.getElementById("savingsList");
-    savingsElement.innerHTML = savings.length ? savings.slice().reverse().map(item => card(`<div class="item-card-main"><strong>${escapeHTML(item.name)}</strong><small>${escapeHTML(formatDate(item.date))}</small></div><strong class="positive">+${money(item.amount)}</strong>${actionButton("delete-saving", item.id, "Delete")}`)).join("") : `<p class="empty">No saves recorded yet.</p>`;
+    savingsElement.innerHTML = savings.length ? savings.slice().reverse().map(item => card(`<div class="item-card-main"><strong>${escapeHTML(item.name)}</strong><small>${escapeHTML(formatDate(item.date))}</small></div><strong class="positive">+${money(item.amount)}</strong><div class="card-actions">${actionButton("edit-saving", item.id, "Edit")}${actionButton("delete-saving", item.id, "Delete")}</div>`)).join("") : `<p class="empty">No saves recorded yet.</p>`;
 
     const loansElement = document.getElementById("loanList");
-    loansElement.innerHTML = loans.length ? loans.map(item => card(`<div class="item-card-main"><strong>${escapeHTML(item.name)}</strong><small>${money(item.balance)} remaining${item.payment ? ` · ${money(item.payment)} monthly payment` : ""}</small></div><strong class="negative">${money(item.balance)}</strong>${actionButton("delete-loan", item.id, "Delete")}`)).join("") : `<p class="empty">No borrowed money recorded.</p>`;
+    loansElement.innerHTML = loans.length ? loans.map(item => card(`<div class="item-card-main"><strong>${escapeHTML(item.name)}</strong><small>${money(item.balance)} remaining${item.payment ? ` · ${money(item.payment)} monthly payment` : ""}</small></div><strong class="negative">${money(item.balance)}</strong><div class="card-actions">${item.payment ? actionButton("pay-loan", item.id, "Make Payment") : ""}${actionButton("delete-loan", item.id, "Delete")}</div>`)).join("") : `<p class="empty">No borrowed money recorded.</p>`;
 }
 
 function settlement(group) {
@@ -471,6 +471,20 @@ function renderAnalytics() {
     document.getElementById("monthlyAnalytics").innerHTML = transactions.length ? `<div class="analytics-row"><span>This month</span><strong>${money(monthly.income - monthly.expense)}</strong></div><div class="analytics-row"><span>This year</span><strong>${money(yearly.income - yearly.expense)}</strong></div>` : `<p class="empty">No monthly data yet.</p>`;
     const insights = []; if (projectedIncome.monthly > 0) insights.push(`You saved ${Math.round(savings / projectedIncome.monthly * 100)}% of this month's planned income.`); if (monthly.expense > projectedIncome.monthly && projectedIncome.monthly > 0) insights.push("Your spending is above your planned income this month."); if (!insights.length) insights.push("Add salary or income sources and Crest Financial will analyze them.");
     document.getElementById("financialInsights").innerHTML = insights.map(item => `<p>${escapeHTML(item)}</p>`).join("");
+}
+
+function renderStatistics() {
+    const expenseTransactions = transactions.filter(item => item.type === "expense");
+    const allTransactions = transactions.length;
+    const avgTransaction = allTransactions ? (transactions.reduce((sum, item) => sum + item.amount, 0) / allTransactions) : 0;
+    const largestExpense = expenseTransactions.length ? Math.max(...expenseTransactions.map(item => item.amount)) : 0;
+    const totalSaved = savings.reduce((sum, item) => sum + item.amount, 0);
+    const totalBorrowed = loans.reduce((sum, item) => sum + item.balance, 0);
+    
+    setText("avgTransaction", money(avgTransaction));
+    setText("largestExpense", money(largestExpense));
+    setText("totalSaved", money(totalSaved));
+    setText("totalBorrowed", money(totalBorrowed));
 }
 
 function paymentItems() {
@@ -549,6 +563,7 @@ function render() {
     renderGroups();
     renderIncome();
     renderAnalytics();
+    renderStatistics();
         renderOverview();
     renderCalendar();
 }
@@ -677,6 +692,71 @@ function bindUI() {
     document.addEventListener("keydown", event => { if (event.key === "Escape") document.querySelectorAll(".modal.active").forEach(modal => closeModal(modal.id)); });
 }
 
+function initializeLogoAndCTA() {
+    // Logo click handler - navigate to home
+    document.querySelector(".brand-logo")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.hash = "#overview";
+    });
+
+    // CTA button handler
+    document.getElementById("ctaAddTransaction")?.addEventListener("click", () => {
+        openModal("transactionModal");
+    });
+
+    // Handle edit-saving action
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest('[data-action="edit-saving"]');
+        if (!button) return;
+        const savingId = button.dataset.id;
+        const saving = findById(savings, savingId);
+        if (!saving) return;
+
+        const newAmount = prompt(`Edit amount for "${saving.name}":`, String(saving.amount));
+        if (newAmount === null) return;
+        
+        const validAmount = amount(newAmount);
+        if (!validAmount) {
+            showToast("Enter a valid amount.", true);
+            return;
+        }
+        
+        saving.amount = validAmount;
+        saveData();
+        render();
+        showToast(`Savings updated: ${saving.name} - ${money(validAmount)}`);
+    });
+
+    // Handle pay-loan action
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest('[data-action="pay-loan"]');
+        if (!button) return;
+        const loanId = button.dataset.id;
+        const loan = findById(loans, loanId);
+        if (!loan || !loan.payment) return;
+
+        const confirmation = confirm(`Make a ${money(loan.payment)} payment on "${loan.name}"?`);
+        if (!confirmation) return;
+
+        // Deduct payment from loan balance
+        loan.balance = Math.max(0, loan.balance - loan.payment);
+        
+        // Record the payment as a transaction
+        transactions.push({
+            id: generateId(),
+            name: `Loan payment: ${loan.name}`,
+            type: "expense",
+            category: "Bills",
+            amount: loan.payment,
+            date: new Date().toISOString().slice(0, 10)
+        });
+
+        saveData();
+        render();
+        showToast(`Payment recorded: ${loan.name} - ${money(loan.payment)}`);
+    });
+}
+
 function initialize() {
     initializeTheme();
     initializePages();
@@ -685,6 +765,7 @@ function initialize() {
     saveData();
     bindForms();
     bindUI();
+    initializeLogoAndCTA();
     document.getElementById("microSaveDate").value = new Date().toISOString().slice(0, 10);
     document.getElementById("salary-yearly").value = incomePlan.yearlySalary || "";
     document.getElementById("salary-monthly").value = incomePlan.monthlyIncome || "";
